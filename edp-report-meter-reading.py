@@ -116,16 +116,24 @@ def edp_sign_in(email, password):
         
         ## Login to edp with authentication token provided on the previous step 
         request_url = 'https://login.edp.pt/listeners/api/pt.edp.sso.auth.logIn'
-        resp = requests.post(request_url, edp_payload_sso_template.substitute(token=request_object.json()['idToken'], correlationID=edp_correlation_id), headers={'authorization': request_object.json()['idToken']})
+        resp = requests.post(request_url, 
+                             edp_payload_sso_template.substitute(token=request_object.json()['idToken'], 
+                                                                 correlationID=edp_correlation_id),
+                             headers={'authorization': request_object.json()['idToken']})
         firebase_token_cookie_header = resp.headers['set-cookie'].split(';')[3].split(',')[1].split('=')[1]
         
         ## Request authorization from google idp (i guess)
         request_url = 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key={0}'.format(edp_google_auth_api_key)
-        resp = requests.post(request_url, google_verifyCustomToken_payload_template.substitute(token=firebase_token_cookie_header))
+        resp = requests.post(request_url, 
+                             google_verifyCustomToken_payload_template.substitute(token=firebase_token_cookie_header))
         
         ## Get user session token from edp with authentication and authorization tokens
         request_url = 'https://edpzero.cliente.edp.pt/client/listeners/api/pt.edp.edponline.usersession.login'
-        resp = requests.post(request_url, edp_payload_usersession_login_template.substitute(token=resp.json()['idToken'], correlationID=edp_correlation_id), headers={'authorization': resp.json()['idToken']})
+        resp = requests.post(request_url, 
+                             edp_payload_usersession_login_template.substitute(token=resp.json()['idToken'],
+                                                                               correlationID=edp_correlation_id), 
+                             headers={'authorization': resp.json()['idToken']})
+        
         authorization_token_header = resp.headers['set-cookie'].split(';')[3].split(',')[1].split('=')[1]
         
         return firebase_token_cookie_header, authorization_token_header
@@ -133,8 +141,18 @@ def edp_sign_in(email, password):
 
 
 def submit_meter_reading(firebase_token_cookie_header, authorization_token_header, edp_contract_id, edp_cpe_code, edp_serial_number, reading_vazio, reading_ponta, reading_cheia):
-    edp_payload_report = edp_payload_report_template.substitute(edp_correlation_id=edp_correlation_id, edp_contract_id=edp_contract_id, edp_serial_number=edp_serial_number, edp_cpe_code=edp_cpe_code, edp_meter_date=edp_meter_date, edp_reading_vazio=reading_vazio, edp_reading_ponta=reading_ponta, edp_reading_cheia=reading_cheia)
-    resp = requests.post(edp_upload_reading_api_endpoint, edp_payload_report, headers={'authorization': authorization_token_header, 'cookie': firebase_token_cookie_header})
+    edp_payload_report = edp_payload_report_template.substitute(edp_correlation_id=edp_correlation_id, 
+                                                                edp_contract_id=edp_contract_id, 
+                                                                edp_serial_number=edp_serial_number, 
+                                                                edp_cpe_code=edp_cpe_code, 
+                                                                edp_meter_date=edp_meter_date, 
+                                                                edp_reading_vazio=reading_vazio, 
+                                                                edp_reading_ponta=reading_ponta, 
+                                                                edp_reading_cheia=reading_cheia)
+    
+    resp = requests.post(edp_upload_reading_api_endpoint, 
+                         edp_payload_report, 
+                         headers={'authorization': authorization_token_header, 'cookie': firebase_token_cookie_header})
     print(resp.text)
     
 def main():    
@@ -169,11 +187,11 @@ def main():
     
     args = arg_parser.parse_args()
 
-
     print("Authenticating ...")
     firebase_token_cookie_header, authorization_token_header = edp_sign_in(args.e, args.p)
     print("Uploading reading report to edp ...")
-    submit_meter_reading(firebase_token_cookie_header, authorization_token_header, args.i, args.c, args.s, args.rv, args.rp, args.rc)
+    submit_meter_reading(firebase_token_cookie_header, 
+                         authorization_token_header, args.i, args.c, args.s, args.rv, args.rp, args.rc)
 
 if __name__ == "__main__":
     main()
