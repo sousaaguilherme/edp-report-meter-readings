@@ -7,6 +7,7 @@ import argparse
 
 
 edp_upload_reading_api_endpoint = 'https://edpzero.cliente.edp.pt/client/listeners/api/pt.edp.edponline.reading.uploadReading'
+edp_get_simulation_api_endpoint = 'https://edpzero.cliente.edp.pt/client/listeners/api/pt.edp.edponline.reading.getSimulation'
 
 edp_google_auth_api_key = 'AIzaSyBCyKe7wskhsEcIHK7C_FVQlJLlOBJPda8'
 
@@ -75,6 +76,20 @@ edp_payload_report_template = Template("""
    ]
 }
 """)
+
+edp_payload_get_simulation_template = Template("""
+{
+   "correlationId":"${edp_correlation_id}",
+   "args":{
+      "contractId":"${edp_contract_id}",
+      "offline":false
+   },
+   "replacements":[
+      
+   ]
+}                               
+""")
+
     
 edp_payload_sso_template = Template("""
 {
@@ -155,6 +170,15 @@ def submit_meter_reading(firebase_token_cookie_header, authorization_token_heade
                          headers={'authorization': authorization_token_header, 'cookie': firebase_token_cookie_header})
     print(resp.text)
     
+def get_simulation(firebase_token_cookie_header, authorization_token_header, edp_contract_id):
+    edp_payload_get_simulation = edp_payload_get_simulation_template.substitute(edp_correlation_id=edp_correlation_id, 
+                                                                edp_contract_id=edp_contract_id)
+    
+    resp = requests.post(edp_get_simulation_api_endpoint, 
+                         edp_payload_get_simulation, 
+                         headers={'authorization': authorization_token_header, 'cookie': firebase_token_cookie_header})
+    print(resp.text)
+    
 def main():    
     arg_parser = argparse.ArgumentParser(prog='edp-report-meter-reading',
                                          usage='%(prog)s [args]',
@@ -192,6 +216,9 @@ def main():
     print("Uploading reading report to edp ...")
     submit_meter_reading(firebase_token_cookie_header, 
                          authorization_token_header, args.i, args.c, args.s, args.rv, args.rp, args.rc)
+    
+    get_simulation(firebase_token_cookie_header, 
+                         authorization_token_header, args.i)
 
 if __name__ == "__main__":
     main()
